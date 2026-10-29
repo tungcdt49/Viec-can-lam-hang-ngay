@@ -914,12 +914,12 @@ renderAll();renderSettingsView();
 
 /* ---- đồng bộ: trong Claude dùng db sẵn có; bản chạy độc lập dùng Firebase Firestore ---- */
 const LSFB="viecThuy.fb";
-const BAKED_FB=null; /* có thể điền sẵn firebaseConfig vào đây khi đưa lên GitHub Pages */
+const BAKED_FB={apiKey:"AIzaSyALjmKrxkANuq8KCvpxJMKJ1Ez2RZ3x-1o",authDomain:"viec-cua-thuy.firebaseapp.com",projectId:"viec-cua-thuy",storageBucket:"viec-cua-thuy.firebasestorage.app",messagingSenderId:"498342812358",appId:"1:498342812358:web:a252f7652232c819c295c7"}; /* có thể điền sẵn firebaseConfig vào đây khi đưa lên GitHub Pages */
 const FB_SDK="https://www.gstatic.com/firebasejs/10.12.5/";
 const sync={mode:"",ok:false,err:""};
 function readFb(){try{return JSON.parse(localStorage.getItem(LSFB)||"null")||{}}catch(e){return {}}}
 function writeFb(o){try{if(o)localStorage.setItem(LSFB,JSON.stringify(o));else localStorage.removeItem(LSFB)}catch(e){}}
-function fbSettings(){const s=readFb(),cfg=s.cfg||BAKED_FB;return (cfg&&cfg.apiKey&&cfg.projectId&&s.code)?{cfg,code:s.code}:null}
+function fbSettings(){const s=readFb(),cfg=BAKED_FB||s.cfg;return (cfg&&cfg.apiKey&&cfg.projectId&&s.code)?{cfg,code:s.code}:null}
 function parseFbConfig(text){
   try{const o=JSON.parse(text);if(o&&o.apiKey&&o.projectId)return o}catch(e){}
   const o={},re=/([A-Za-z]+)\s*:\s*["']([^"']+)["']/g;let m;while((m=re.exec(text)))o[m[1]]=m[2];
@@ -954,7 +954,7 @@ function renderSyncCard(){
     box.innerHTML=h+'<p class="note" style="margin:0">Đang mở trong Claude: dữ liệu tự đồng bộ trên mọi thiết bị đăng nhập tài khoản được chia sẻ trang này (quyền sửa). Muốn dùng ngoài Claude thì dùng bản HTML độc lập với Firebase.</p>';
     return;
   }
-  const s=readFb(),cfg=s.cfg||BAKED_FB,on=!!(cfg&&cfg.apiKey&&s.code);
+  const s=readFb(),cfg=BAKED_FB||s.cfg,on=!!(cfg&&cfg.apiKey&&s.code);
   if(on){
     h+='<p class="note" style="margin:0 0 10px">Dự án Firebase: <b>'+esc(cfg.projectId)+'</b>. Thiết bị nào dùng cùng dự án và cùng mã nhóm sẽ thấy chung một danh sách việc.</p>'+
       '<div class="fbfield"><label for="fbCode">Mã nhóm (giữ kín, ai biết mã đều xem được dữ liệu)</label><input id="fbCode" value="'+esc(s.code)+'" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false"></div>'+
@@ -995,10 +995,11 @@ function hideLockNoDb(){lockLoaded=true;$("#lock").hidden=true}
   }
   sync.ok=true;setSync(syncLabel());
   const fail=e=>{sync.err=(e&&e.code)||"err";setSync(e&&String(e.code).indexOf("permission")>=0?"Firestore chặn quyền đọc":"Mất kết nối",true)};
+  let autoSeeded=false;
   const settled=s=>!(s.metadata&&s.metadata.fromCache);
   db.doc("settings/lock").onSnapshot(s=>{lockDoc=s.exists?s.data():null;lockLoaded=true;updateLockScreen();renderPwCard()},()=>{lockLoaded=true;updateLockScreen()});
   db.collection("tasks").where("date",">=",subStart).onSnapshot(s=>{tasks=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));if(settled(s))tasksReady=true;renderAll();rollover()},fail);
-  db.collection("templates").onSnapshot(s=>{templates=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));if(settled(s))tplReady=true;renderAll();rollover()},fail);
+  db.collection("templates").onSnapshot(s=>{templates=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));if(settled(s)){tplReady=true;if(!templates.size&&sync.mode==="firebase"&&!autoSeeded){autoSeeded=true;db.doc("settings/main").get().then(x=>{if(!x.exists)seedTemplates()}).catch(()=>{})}}renderAll();rollover()},fail);
   db.doc("settings/main").onSnapshot(s=>{settings=s.exists?{...DEF_SET,...s.data()}:DEF_SET;fillSettings();renderAll()},fail);
   fillSettings();
 })();
