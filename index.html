@@ -140,6 +140,32 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .tag.miss{background:var(--bad-soft);color:var(--bad)}
 a.tag.cal{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 .del{border:0;background:transparent;color:var(--muted);font-size:20px;width:30px;height:30px;border-radius:8px;flex:none}
+.task.planned{background:transparent;border-style:dashed;opacity:.85}
+.task.planned::before{opacity:.45}
+.task.planned .check{border-style:dashed;cursor:default}
+.tag.plan{background:var(--surface-2);color:var(--muted);border:1px dashed var(--line)}
+.lblbtn{border:0;background:transparent;color:inherit;text-align:left;padding:2px 4px;margin:-2px -4px;border-radius:10px;cursor:pointer}
+.lblbtn:hover{background:color-mix(in oklab,var(--on-accent) 12%,transparent)}
+.lblbtn .calhint{display:inline-flex;align-items:center;gap:4px;margin-left:6px;font-size:12px;font-weight:600;opacity:.95;background:color-mix(in oklab,var(--on-accent) 18%,transparent);border-radius:999px;padding:1px 8px}
+.calpanel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:12px;margin-bottom:14px;box-shadow:0 8px 24px -16px color-mix(in oklab,var(--ink) 50%,transparent)}
+.calhead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.calhead b{flex:1;text-align:center;font:800 17px var(--f-display)}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cdow{text-align:center;font-size:11px;font-weight:700;color:var(--muted);padding-bottom:2px}
+.cday{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:54px;padding:5px 2px 4px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);min-width:0}
+.cday b{font:700 15px/1 var(--f-display)}
+.cday small{font-size:10px;font-weight:600;color:var(--muted);min-height:12px;white-space:nowrap}
+.cdot{width:8px;height:8px;border-radius:50%;background:transparent}
+.cdot.ok{background:var(--good)}
+.cdot.open{background:var(--warn)}
+.cdot.plan{background:transparent;border:1.5px solid var(--muted)}
+.cday.today{border:2px solid var(--accent)}
+.cday.sel{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.cday.sel small{color:var(--on-accent)}
+.cday.sel .cdot.ok,.cday.sel .cdot.open{box-shadow:0 0 0 2px var(--on-accent)}
+.cday.sel .cdot.plan{border-color:var(--on-accent)}
+.calfoot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.calfoot .legend{margin:0}
 .empty{color:var(--muted);font-size:14px;padding:14px;border:1.5px dashed var(--line);border-radius:16px;text-align:center}
 
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in oklab,var(--surface) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
@@ -185,6 +211,9 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent-soft)}
 
 .tpl{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
 .tpl .body{flex:1;min-width:0}
+.tplacts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.tplacts .chipbtn{padding:5px 10px;font-size:12px}
+.tag.okday{background:var(--good-soft);color:var(--good)}
 .days{display:flex;gap:4px;flex-wrap:wrap}
 .days button{width:36px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);font-size:12px;font-weight:700;color:var(--muted)}
 .days button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
@@ -259,7 +288,7 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent-soft)}
     <div class="hero">
       <div class="daynav">
         <button class="hbtn" id="prevDay" aria-label="Ngày trước">‹</button>
-        <div class="lbl"><b id="dayTitle">Hôm nay</b><span id="daySub"></span></div>
+        <button type="button" class="lbl lblbtn" id="openCal" aria-expanded="false" aria-controls="calPanel"><b id="dayTitle">Hôm nay</b><span id="daySub"></span><span class="calhint">Lịch ▾</span></button>
         <button class="hchip" id="goToday">Hôm nay</button>
         <button class="hbtn" id="nextDay" aria-label="Ngày sau">›</button>
       </div>
@@ -272,8 +301,16 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent-soft)}
         <div class="herotxt">
           <div class="greet" id="greet">Chào bạn</div>
           <b id="progTitle">Lên kế hoạch cho hôm nay nhé.</b>
-          <div class="counts"><span class="c1"><i></i><span id="cDone" class="num">0</span>&nbsp;xong</span><span class="c2"><i></i><span id="cLeft" class="num">0</span>&nbsp;chưa xong</span><span class="c3" id="cCarryWrap" hidden><i></i><span id="cCarry" class="num">0</span>&nbsp;dời sang</span></div>
+          <div class="counts"><span class="c1"><i></i><span id="cDone" class="num">0</span>&nbsp;xong</span><span class="c2"><i></i><span id="cLeft" class="num">0</span>&nbsp;<span id="cLeftLbl">chưa xong</span></span><span class="c3" id="cCarryWrap" hidden><i></i><span id="cCarry" class="num">0</span>&nbsp;dời sang</span></div>
         </div>
+      </div>
+    </div>
+    <div class="calpanel" id="calPanel" hidden>
+      <div class="calhead"><button class="iconbtn" type="button" id="calPrev" aria-label="Tháng trước">‹</button><b id="calTitle"></b><button class="iconbtn" type="button" id="calNext" aria-label="Tháng sau">›</button></div>
+      <div class="calgrid" id="calGrid"></div>
+      <div class="calfoot">
+        <div class="legend"><span><i style="background:var(--good);border-radius:50%"></i>Xong hết</span><span><i style="background:var(--warn);border-radius:50%"></i>Còn việc dở</span><span><i style="border:1.5px solid var(--muted);border-radius:50%"></i>Dự kiến</span></div>
+        <button class="chipbtn" type="button" id="calToday">Về hôm nay</button>
       </div>
     </div>
     <div class="alerts" id="alerts"></div>
@@ -317,7 +354,7 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent-soft)}
   <section id="v-tpl" hidden>
     <div class="card">
       <h2>Việc cố định</h2>
-      <p class="note" style="margin:0 0 10px">Việc lặp lại theo thứ trong tuần. Mỗi ngày bấm "Thêm việc cố định" ở mục Hôm nay, rồi bổ sung việc riêng của ngày.</p>
+      <p class="note" style="margin:0 0 10px">Việc lặp lại theo thứ trong tuần. App tự đưa vào danh sách Hôm nay mỗi ngày, kể cả việc vừa tạo. Ngày mai và các ngày sau sẽ tự thêm khi đến ngày.</p>
       <form class="addbox" id="tplForm" style="margin:0;box-shadow:none" autocomplete="off">
         <input type="text" id="tplTitle" placeholder="Vd: Kiểm tra bài tập của con" maxlength="140">
         <div class="row">
@@ -440,7 +477,7 @@ const store={get(k,s){try{return (s?sessionStorage:localStorage).getItem(k)}catc
 const reduceMotion=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}};
 
 let db=null, tasks=new Map(), templates=new Map(), settings=DEF_SET, lockDoc=null, lockLoaded=false;
-let tasksReady=false, tplReady=false;
+let tasksReady=false, tplReady=false, tombs=new Set();
 let curDate=ymd(new Date()), view="today", statMode="week", statOffset=0;
 let subStart=ymd(addDays(new Date(),-100));
 let soundOn=false, audioCtx=null, justDone=null;
@@ -530,6 +567,7 @@ $("#goToday").onclick=()=>{curDate=ymd(new Date());renderToday()};
 function tasksOn(date){return [...tasks.values()].filter(t=>t.date===date)}
 function tplFor(date){const dw=parse(date).getDay();return [...templates.values()].filter(t=>Array.isArray(t.days)&&t.days.includes(dw))}
 const isOpen=t=>!t.done&&!t.rolledTo;
+function plannedFor(date){return date>ymd(new Date())?tplFor(date).filter(tp=>!tasks.has(date+"_"+tp.id)&&!tombs.has(date+"_"+tp.id)).map(tp=>({id:"plan_"+tp.id,planned:true,date,title:tp.title,area:tp.area,session:tp.session,time:tp.time||"",templateId:tp.id})):[]}
 
 /* ---- hôm nay ---- */
 function greeting(){const h=new Date().getHours();return h<11?"Chào buổi sáng, Thủy":h<13?"Chào buổi trưa, Thủy":h<18?"Chào buổi chiều, Thủy":"Chào buổi tối, Thủy"}
@@ -543,17 +581,19 @@ function renderToday(){
   const pct=list.length?Math.round(done/list.length*100):0;
   $("#ringArc").setAttribute("stroke-dasharray",pct+" 100");$("#ringArc").style.opacity=pct?1:0;
   $("#ringTxt").textContent=pct+"%";
-  $("#greet").textContent=diff===0?greeting():"Xem lại ngày "+dm(curDate);
+  $("#greet").textContent=diff===0?greeting():(diff>0?"Xem trước ngày ":"Xem lại ngày ")+dm(curDate);
   $("#progTitle").textContent=!list.length?(diff<0?"Ngày này chưa có việc nào.":"Lên kế hoạch cho ngày này nhé."):left===0&&rolled===0?"Tuyệt vời, xong hết rồi!":left===0?"Ngày này đã khép lại.":left===1?"Còn đúng 1 việc nữa thôi!":"Còn "+left+" việc nữa, cố lên!";
-  $("#cDone").textContent=done;$("#cLeft").textContent=left;
+  const planned=plannedFor(curDate);
+  if(diff>0){const n=list.length+planned.length;$("#progTitle").textContent=n?(diff===1?"Ngày mai":"Ngày này")+" dự kiến có "+n+" việc.":"Ngày này chưa có việc nào."}
+  $("#cDone").textContent=done;$("#cLeft").textContent=left+planned.length;$("#cLeftLbl").textContent=diff>0?"dự kiến":"chưa xong";
   $("#cCarry").textContent=rolled;$("#cCarryWrap").hidden=!rolled;
   renderAlerts();
   const box=$("#sessions");box.innerHTML="";
   const nowMin=new Date().getHours()*60+new Date().getMinutes();
   const tkey=t=>t.time||"99";
   SESS.forEach(([k,label])=>{
-    const items=list.filter(t=>t.session===k).sort((a,b)=>((a.done||!!a.rolledTo)-(b.done||!!b.rolledTo))||(tkey(a)<tkey(b)?-1:tkey(a)>tkey(b)?1:0)||((a.createdAt||0)-(b.createdAt||0)));
-    const ck=settings.checks?.[k]; const pending=items.filter(isOpen).length;
+    const items=list.concat(planned).filter(t=>t.session===k).sort((a,b)=>((a.done||!!a.rolledTo||!!a.planned)-(b.done||!!b.rolledTo||!!b.planned))||(tkey(a)<tkey(b)?-1:tkey(a)>tkey(b)?1:0)||((a.createdAt||0)-(b.createdAt||0)));
+    const ck=settings.checks?.[k]; const pending=items.filter(t=>isOpen(t)&&!t.planned).length;
     const late=curDate<today||(curDate===today&&ck&&nowMin>=hm2min(ck));
     const sec=document.createElement("div");sec.className="session";
     sec.innerHTML='<h3><span class="sic">'+SICON[k]+'</span>'+label+(ck?'<span class="due'+(late&&pending?' late':'')+'">'+(late&&pending?'còn '+pending+' việc · ':'')+'kiểm tra '+esc(ck)+'</span>':'')+'</h3>';
@@ -561,20 +601,20 @@ function renderToday(){
     if(!items.length){ul.innerHTML='<div class="empty">Chưa có việc '+label.toLowerCase()+'.</div>'}
     items.forEach(t=>{
       const el=document.createElement("div");
-      el.className="task "+t.area+(t.done?" done":"")+(t.rolledTo&&!t.done?" rolled":"")+(justDone===t.id?" justdone":"");
-      const tags=[];
+      el.className="task "+t.area+(t.planned?" planned":"")+(t.done?" done":"")+(t.rolledTo&&!t.done?" rolled":"")+(justDone===t.id?" justdone":"");
+      const tags=[];if(t.planned)tags.push('<span class="tag plan">Dự kiến · tự thêm khi đến ngày</span>');
       if(t.time)tags.push('<span class="tag time num">'+esc(t.time)+'</span>');
       tags.push('<span class="tag '+t.area+'">'+(AREA[t.area]||"")+'</span>');
       if(t.templateId)tags.push('<span class="tag fixed">cố định</span>');
       if(t.carriedFrom)tags.push('<span class="tag carry">'+(t.carriedDays>1?'Dời '+t.carriedDays+' ngày, từ '+dm(t.carriedFrom):'Dời từ '+dm(t.carriedFrom))+'</span>');
       if(t.rolledTo&&!t.done)tags.push(t.missed?'<span class="tag miss">Bỏ lỡ</span>':'<span class="tag carry">Đã chuyển sang '+dm(t.rolledTo)+'</span>');
       if(t.time&&isOpen(t)&&t.date>=today)tags.push('<a class="tag cal" target="_blank" rel="noopener" href="'+esc(gcalLink({title:t.title,date:t.date,time:t.time}))+'">+ Nhắc trên lịch</a>');
-      const locked=!!t.rolledTo&&!t.done;
+      const locked=(!!t.rolledTo&&!t.done)||!!t.planned;
       el.innerHTML='<button class="check" aria-label="'+(t.done?"Bỏ đánh dấu xong":"Đánh dấu xong")+'"'+(locked?' disabled':'')+'>'+CHECK+'</button>'+
         '<div class="body"><div class="title">'+esc(t.title)+'</div><div class="tags">'+tags.join("")+'</div></div>'+
-        '<button class="del" aria-label="Xoá việc">×</button>';
+        (t.planned?'':'<button class="del" aria-label="Xoá việc">×</button>');
       el.querySelector(".check").onclick=()=>toggle(t);
-      el.querySelector(".del").onclick=()=>removeTask(t);
+      if(!t.planned)el.querySelector(".del").onclick=()=>removeTask(t);
       ul.appendChild(el);
     });
     sec.appendChild(ul);box.appendChild(sec);
@@ -587,8 +627,8 @@ function renderAlerts(){
   if(!db)return;
   const today=ymd(new Date()), list=tasksOn(curDate);
   const now=new Date(), nowMin=now.getHours()*60+now.getMinutes();
-  const missingTpl=tplFor(curDate).filter(tp=>!tasks.has(curDate+"_"+tp.id));
-  if(missingTpl.length&&curDate>=today){
+  const missingTpl=tplFor(curDate).filter(tp=>!tasks.has(curDate+"_"+tp.id)&&!tombs.has(curDate+"_"+tp.id));
+  if(missingTpl.length&&curDate===today){
     const a=document.createElement("div");a.className="alert info";
     a.innerHTML='<b>Có '+missingTpl.length+' việc cố định cho ngày này.</b><div class="act"><button class="primary" type="button">Thêm việc cố định</button></div>';
     a.querySelector("button").onclick=e=>{e.target.disabled=true;applyTemplates(curDate,missingTpl)};
@@ -629,13 +669,31 @@ async function toggle(t){
   }
   try{await db.doc("tasks/"+t.id).update({done:willDone,doneAt:willDone?Date.now():null})}catch(e){writeErr(e)}
 }
-async function removeTask(t){try{await db.doc("tasks/"+t.id).delete();toast("Đã xoá: "+t.title)}catch(e){writeErr(e)}}
-async function applyTemplates(date,list){
-  for(const tp of list){
-    try{await db.doc("tasks/"+date+"_"+tp.id).set({date,title:tp.title,area:tp.area,session:tp.session,time:tp.time||"",done:false,doneAt:null,templateId:tp.id,createdAt:Date.now()})}catch(e){writeErr(e);return}
-  }
-  toast("Đã thêm "+list.length+" việc cố định");
+async function removeTask(t){try{if(t.templateId)await db.doc("tasks/"+t.id).update({deleted:true,deletedAt:Date.now()});else await db.doc("tasks/"+t.id).delete();toast("Đã xoá: "+t.title)}catch(e){writeErr(e)}}
+function tplTask(date,tp){return {date,title:tp.title,area:tp.area,session:tp.session,time:tp.time||"",done:false,doneAt:null,templateId:tp.id,createdAt:Date.now()}}
+async function addOneTpl(date,tp,restore){
+  const ref=db.doc("tasks/"+date+"_"+tp.id);const ex=await ref.get();
+  if(ex.exists){const d=ex.data()||{};if(restore&&d.deleted){await ref.update({deleted:false,done:false,doneAt:null});return true}return false}
+  await ref.set(tplTask(date,tp));return true;
 }
+async function applyTemplates(date,list,quiet){
+  if(!db)return;let n=0;
+  for(const tp of list){try{if(await addOneTpl(date,tp,true))n++}catch(e){writeErr(e);return}}
+  if(!quiet)toast(n?"Đã thêm "+n+" việc vào "+(date===ymd(new Date())?"hôm nay":"ngày "+dm(date)):"Việc này đã có trong ngày "+dm(date));
+}
+/* tự đưa việc cố định vào danh sách hôm nay */
+let applying=false;const tried=new Set();
+async function autoApply(){
+  if(!db||!tasksReady||!tplReady||applying)return;
+  const today=ymd(new Date());
+  const miss=tplFor(today).filter(tp=>{const id=today+"_"+tp.id;return !tasks.has(id)&&!tombs.has(id)&&!tried.has(id)});
+  if(!miss.length)return;
+  applying=true;let n=0;
+  try{for(const tp of miss){tried.add(today+"_"+tp.id);if(await addOneTpl(today,tp,false))n++}
+    if(n)toast("Đã đưa "+n+" việc cố định vào hôm nay")}catch(e){writeErr(e)}
+  applying=false;
+}
+async function afterSync(){await rollover();await autoApply()}
 $("#addForm").addEventListener("submit",e=>{
   e.preventDefault();const v=$("#newTitle").value.trim();if(!v)return;
   addTask(v,segValue("newArea","area"),segValue("newSession","s"),curDate,$("#newTime").value);
@@ -690,7 +748,11 @@ function renderTemplates(){
   if(!list.length){box.innerHTML='<div class="empty">Chưa có việc cố định. Thêm ở khung trên, hoặc dùng danh sách có sẵn.<div style="margin-top:10px"><button class="primary" type="button" id="seedTpl">Thêm 15 việc cơ bản</button></div></div>';$("#seedTpl").onclick=e=>seedTemplates(e.target);return}
   list.forEach(t=>{
     const el=document.createElement("div");el.className="tpl";
-    el.innerHTML='<div class="body"><div class="title">'+esc(t.title)+'</div><div class="tags">'+(t.time?'<span class="tag time num">'+esc(t.time)+'</span>':'')+'<span class="tag '+t.area+'">'+(AREA[t.area]||"")+'</span><span class="tag fixed">'+(SESS.find(s=>s[0]===t.session)||["",""])[1]+'</span><span class="tag fixed">'+daysText(t.days)+'</span></div></div><button class="del" aria-label="Xoá việc cố định">×</button>';
+    const today=ymd(new Date()), inToday=tasks.has(today+"_"+t.id);
+    el.innerHTML='<div class="body"><div class="title">'+esc(t.title)+'</div><div class="tags">'+(t.time?'<span class="tag time num">'+esc(t.time)+'</span>':'')+'<span class="tag '+t.area+'">'+(AREA[t.area]||"")+'</span><span class="tag fixed">'+(SESS.find(s=>s[0]===t.session)||["",""])[1]+'</span><span class="tag fixed">'+daysText(t.days)+'</span></div>'+
+      '<div class="tplacts">'+(inToday?'<span class="tag okday">Đã có trong hôm nay</span>':'<button type="button" class="chipbtn addtoday">+ Thêm vào hôm nay</button>')+
+      (t.time?'<a class="chipbtn" target="_blank" rel="noopener" href="'+esc(gcalLink({title:t.title,time:t.time,days:t.days}))+'">Nhắc trên lịch</a>':'<span class="note">Đặt giờ để nhắc trên lịch</span>')+'</div></div><button class="del" aria-label="Xoá việc cố định">×</button>';
+    const ad=el.querySelector(".addtoday");if(ad)ad.onclick=()=>{ad.disabled=true;applyTemplates(today,[t])};
     el.querySelector(".del").onclick=async()=>{try{await db.doc("templates/"+t.id).delete();toast("Đã xoá việc cố định")}catch(e){writeErr(e)}};
     box.appendChild(el);
   });
@@ -839,7 +901,7 @@ function lastRing(k){return Number(store.get("ring_"+ymd(new Date())+"_"+k)||0)}
 function setRing(k){store.set("ring_"+ymd(new Date())+"_"+k,String(Date.now()))}
 function tick(){
   const now=new Date(),today=ymd(now);
-  if(today!==lastDay){if(curDate===lastDay)curDate=today;lastDay=today;rollover()}
+  if(today!==lastDay){if(curDate===lastDay)curDate=today;lastDay=today;afterSync()}
   if(!db){renderToday();return}
   const nowMin=now.getHours()*60+now.getMinutes(),list=tasksOn(today),rep=(settings.repeatMin||0)*60000;
   const checks=[["plan",settings.planBy,!list.length,"Chưa lên kế hoạch hôm nay","Ghi vài việc chính cần làm nhé."]]
@@ -864,7 +926,7 @@ function period(){
 }
 async function tasksInRange(a,b){
   if(a>=subStart)return [...tasks.values()].filter(t=>t.date>=a&&t.date<=b);
-  try{const snap=await db.collection("tasks").where("date",">=",a).where("date","<=",b).get();return snap.docs.map(d=>({id:d.id,...d.data()}))}catch(e){return []}
+  try{const snap=await db.collection("tasks").where("date",">=",a).where("date","<=",b).get();return snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!t.deleted)}catch(e){return []}
 }
 let statSeq=0;
 async function renderStats(){
@@ -909,7 +971,36 @@ async function renderStats(){
     '<div class="card"><h2>Việc bị dời nhiều nhất</h2>'+(carriedTop.length?'<ul class="misslist">'+carriedTop.map(t=>'<li><span>'+esc(t.title)+'</span><span class="num tag carry">'+(t.carriedDays||1)+' ngày'+(t.done?' · đã xong':'')+'</span></li>').join("")+'</ul>':'<p class="note" style="margin:0">Không có việc nào phải dời.</p>')+'</div>';
 }
 
-function renderAll(){renderToday();renderTemplates();if(view==="stats")renderStats();if(view==="set")renderSettingsView()}
+let calMonth=null,calSeq=0;
+function setCal(open){
+  const p=$("#calPanel");p.hidden=!open;$("#openCal").setAttribute("aria-expanded",open?"true":"false");
+  if(open){const d=parse(curDate);calMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCal()}
+}
+$("#openCal").onclick=()=>setCal($("#calPanel").hidden);
+$("#calPrev").onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);renderCal()};
+$("#calNext").onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1);renderCal()};
+$("#calToday").onclick=()=>{curDate=ymd(new Date());setCal(false);renderToday()};
+async function renderCal(){
+  if($("#calPanel").hidden||!calMonth)return;
+  const y=calMonth.getFullYear(),m=calMonth.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0);
+  $("#calTitle").textContent="Tháng "+(m+1)+"/"+y;
+  const seq=++calSeq;
+  const list=db?await tasksInRange(ymd(first),ymd(last)):[];
+  if(seq!==calSeq)return;
+  const by={};list.forEach(t=>{(by[t.date]=by[t.date]||[]).push(t)});
+  const today=ymd(new Date()),lead=(first.getDay()+6)%7;
+  let h=["T2","T3","T4","T5","T6","T7","CN"].map(x=>'<span class="cdow">'+x+'</span>').join("");
+  for(let i=0;i<lead;i++)h+='<span></span>';
+  for(let d=1;d<=last.getDate();d++){
+    const k=ymd(new Date(y,m,d)),l=by[k]||[];let cls="",txt="",lab="";
+    if(k>today){const n=l.length+plannedFor(k).length;if(n){cls="plan";txt=n+" việc";lab=n+" việc dự kiến"}}
+    else if(l.length){const dn=l.filter(t=>t.done).length;cls=dn===l.length?"ok":"open";txt=dn+"/"+l.length;lab="xong "+dn+" trên "+l.length+" việc"}
+    h+='<button type="button" class="cday'+(k===today?' today':'')+(k===curDate?' sel':'')+'" data-d="'+k+'" aria-label="Ngày '+d+'/'+(m+1)+(lab?', '+lab:'')+'"><b class="num">'+d+'</b><span class="cdot '+cls+'"></span><small class="num">'+txt+'</small></button>';
+  }
+  const g=$("#calGrid");g.innerHTML=h;
+  g.querySelectorAll(".cday").forEach(b=>b.onclick=()=>{curDate=b.dataset.d;setCal(false);renderToday();window.scrollTo({top:0})});
+}
+function renderAll(){renderCal();renderToday();renderTemplates();if(view==="stats")renderStats();if(view==="set")renderSettingsView()}
 renderAll();renderSettingsView();
 
 /* ---- đồng bộ: trong Claude dùng db sẵn có; bản chạy độc lập dùng Firebase Firestore ---- */
@@ -937,7 +1028,7 @@ async function fbDb(fb){
   const fs=firebase.firestore(app);
   try{await fs.enablePersistence({synchronizeTabs:true})}catch(e){}
   const root="viecThuy/"+fb.code+"/";
-  const wq=q=>({where:(a,b,c)=>wq(q.where(a,b,c)),orderBy:(f,d)=>wq(q.orderBy(f,d)),limit:n=>wq(q.limit(n)),get:()=>q.get(),onSnapshot:(n,e)=>q.onSnapshot(n,e)});
+  const wq=q=>({where:(a,b,c)=>wq(q.where(a,b,c)),orderBy:(f,d)=>wq(q.orderBy(f,d)),limit:n=>wq(q.limit(n)),get:()=>q.get(),onSnapshot:(n,e)=>q.onSnapshot({includeMetadataChanges:true},n,e)});
   return {doc:p=>fs.doc(root+p),collection:c=>{const r=fs.collection(root+c),w=wq(r);w.doc=id=>id?r.doc(id):r.doc();return w}};
 }
 function setSync(label,bad){$("#sync").textContent=label;$("#sync").classList.toggle("bad",!!bad);renderSyncCard()}
@@ -998,8 +1089,8 @@ function hideLockNoDb(){lockLoaded=true;$("#lock").hidden=true}
   let autoSeeded=false;
   const settled=s=>!(s.metadata&&s.metadata.fromCache);
   db.doc("settings/lock").onSnapshot(s=>{lockDoc=s.exists?s.data():null;lockLoaded=true;updateLockScreen();renderPwCard()},()=>{lockLoaded=true;updateLockScreen()});
-  db.collection("tasks").where("date",">=",subStart).onSnapshot(s=>{tasks=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));if(settled(s))tasksReady=true;renderAll();rollover()},fail);
-  db.collection("templates").onSnapshot(s=>{templates=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));if(settled(s)){tplReady=true;if(!templates.size&&sync.mode==="firebase"&&!autoSeeded){autoSeeded=true;db.doc("settings/main").get().then(x=>{if(!x.exists)seedTemplates()}).catch(()=>{})}}renderAll();rollover()},fail);
+  db.collection("tasks").where("date",">=",subStart).onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...d.data()}));tombs=new Set(all.filter(t=>t.deleted).map(t=>t.id));tasks=new Map(all.filter(t=>!t.deleted).map(t=>[t.id,t]));if(settled(s))tasksReady=true;renderAll();afterSync()},fail);
+  db.collection("templates").onSnapshot(s=>{templates=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));if(settled(s)){tplReady=true;if(!templates.size&&sync.mode==="firebase"&&!autoSeeded){autoSeeded=true;db.doc("settings/main").get().then(x=>{if(!x.exists)seedTemplates()}).catch(()=>{})}}renderAll();afterSync()},fail);
   db.doc("settings/main").onSnapshot(s=>{settings=s.exists?{...DEF_SET,...s.data()}:DEF_SET;fillSettings();renderAll()},fail);
   fillSettings();
 })();
